@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>童年小屋·点击图片找AD钙奶</title>
+    <style>
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: #6b4c3b;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .game-container {
+            background: #f7e3b2;
+            border-radius: 48px;
+            padding: 20px;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.3);
+            max-width: 1000px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            margin: 0 0 5px;
+            font-size: 1.8rem;
+            color: #d45a1a;
+            text-shadow: 2px 2px 0 #ffcd94;
+        }
+        .mission-card {
+            background: #fff2df;
+            border-radius: 50px;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 18px;
+            font-weight: bold;
+        }
+        .status-badge {
+            background: #b87a3c;
+            color: #fff0c0;
+            padding: 6px 18px;
+            border-radius: 40px;
+        }
+        /* 图片容器 */
+        .image-map-container {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+        }
+        .image-map-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            pointer-events: none;
+        }
+        /* 热区层 */
+        .hotspot-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .hotspot {
+            position: absolute;
+            cursor: pointer;
+            background: rgba(255, 0, 0, 0); /* 完全透明 */
+            /* 调试时可改为半透明红 background: rgba(255,0,0,0.2); */
+        }
+        .reset-btn {
+            background: #ffcd7e;
+            border: none;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 48px;
+            margin-top: 20px;
+            font-family: inherit;
+            color: #5a2e0c;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #b4622a;
+            transition: 0.05s linear;
+        }
+        .reset-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #b4622a;
+        }
+        footer {
+            font-size: 0.7rem;
+            margin-top: 15px;
+            color: #b2773c;
+        }
+
+        /* ---------- 自定义弹窗样式 (居中，可关闭) ---------- */
+        .custom-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background: #fff8e7;
+            max-width: 280px;
+            width: 80%;
+            border-radius: 48px;
+            padding: 24px 20px 28px;
+            text-align: center;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.3);
+            border: 2px solid #ffcd94;
+            animation: pop 0.2s ease-out;
+        }
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .modal-message {
+            font-size: 1.1rem;
+            color: #5a2e1a;
+            margin: 15px 0;
+            line-height: 1.4;
+            font-weight: bold;
+        }
+        .modal-close-btn {
+            background: #ffc46b;
+            border: none;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 8px 24px;
+            border-radius: 60px;
+            font-family: inherit;
+            color: #592d0a;
+            cursor: pointer;
+            margin-top: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: 0.05s linear;
+        }
+        .modal-close-btn:active {
+            transform: scale(0.96);
+        }
+        @media (max-width: 600px) {
+            .modal-message { font-size: 0.95rem; }
+            .modal-content { width: 85%; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <h1>🏡 童年小屋 · 寻找AD钙奶 🥛</h1>
+    <div class="mission-card">
+        <span>🔍 任务：找到藏在家里的那瓶 AD 钙奶</span>
+        <span class="status-badge" id="statusBadge">🥛 未找到</span>
+    </div>
+
+    <!-- 图片 + 热区 -->
+    <div class="image-map-container" id="mapContainer">
+        <!-- ⭐⭐⭐ 重要：请把您的图片文件放在同目录，并修改下方 src 文件名 ⭐⭐⭐ -->
+        <img id="roomImage" src="your_room.jpg" alt="童年房间" onerror="alert('请将图片命名为 your_room.jpg 放在本文件同目录下，或修改 src 地址')">
+        <div class="hotspot-layer" id="hotspotLayer"></div>
+    </div>
+
+    <button class="reset-btn" id="resetBtn">🔄 重新寻宝 · 时光倒流 🔄</button>
+    <footer>✨ 直接点击图片上的物品（电视机、书桌、床、冰箱、书架、玩具箱）✨<br>💡 提示：玩具箱里藏着童年的AD钙奶！</footer>
+</div>
+
+<!-- 自定义弹窗 -->
+<div id="customModal" class="custom-modal">
+    <div class="modal-content">
+        <div class="modal-message" id="modalMessage">消息内容</div>
+        <button class="modal-close-btn" id="modalCloseBtn">关 闭</button>
+    </div>
+</div>
+
+<script>
+    // ---------- 游戏状态 ----------
+    let foundAD = false;
+
+    // ---------- 热区数据（请根据您的实际图片修改坐标！）----------
+    // 测量方法：用画图软件打开您的图片，鼠标移动到物品左上角，记下 X,Y；再移动右下角，宽 = 右下X - 左上X，高 = 右下Y - 左上Y。
+    // 假设您的图片原始宽度为 1600px，高度为 1000px（示例值）。您测量出的像素坐标直接填入 left, top, width, height 即可。
+    // 我下面给出一组示例（适用于一张示例图），您务必改为自己的数值。
+    let hotSpots = [
+        { name: "电视机", left: 585, top:276, width: 142, height: 113, msg: "📺 电视里放着《黑猫警长》，但没有AD钙奶。", isTreasure: false },
+        { name: "书桌", left: 365, top: 324, width: 186, height: 168, msg: "📖 书桌抽屉里有旧弹珠和明星贴纸，没有AD钙奶。", isTreasure: false },
+        { name: "床", left: 1116, top: 308, width: 270, height: 338, msg: "🛏️ 枕头下压着一本《哆啦A梦》，床底空空，没有AD钙奶。", isTreasure: false },
+        { name: "冰箱", left: 751, top:196, width: 125, height: 295, msg: "🧊 冰箱里只有冰棍和汽水，没有AD钙奶。", isTreasure: false },
+        { name: "书架", left: 903, top: 206, width: 163, height: 277, msg: "📚 书架上全是连环画，翻了一遍没有AD钙奶。", isTreasure: false },
+        { name: "玩具箱", left:163, top: 715, width: 191, height: 228, msg: "🎉 打开玩具箱，在最底层找到了AD钙奶！童年的味道！", isTreasure: true }
+    ];
+
+    // 获取元素
+    const img = document.getElementById('roomImage');
+    const hotspotLayer = document.getElementById('hotspotLayer');
+    const statusSpan = document.getElementById('statusBadge');
+    const modal = document.getElementById('customModal');
+    const modalMsg = document.getElementById('modalMessage');
+    const modalClose = document.getElementById('modalCloseBtn');
+
+    // 自定义弹窗函数
+    function showModal(text) {
+        modalMsg.innerHTML = text;
+        modal.style.display = 'flex';
+    }
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+    modalClose.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    // 更新顶部状态
+    function updateUI() {
+        if (foundAD) {
+            statusSpan.innerHTML = '🎉 已找到 AD钙奶！ 🥛';
+            statusSpan.style.background = '#d68b3c';
+        } else {
+            statusSpan.innerHTML = '🥛 未发现 继续探索 🧸';
+            statusSpan.style.background = '#b87a3c';
+        }
+    }
+
+    // 根据图片实际显示尺寸，动态生成热区
+    function generateHotspots() {
+        if (!img.complete || img.naturalWidth === 0) {
+            setTimeout(generateHotspots, 100);
+            return;
+        }
+        const displayWidth = img.clientWidth;
+        const displayHeight = img.clientHeight;
+        const originalWidth = img.naturalWidth;
+        const originalHeight = img.naturalHeight;
+        
+        hotspotLayer.innerHTML = '';
+        
+        hotSpots.forEach(spot => {
+            const scaleX = displayWidth / originalWidth;
+            const scaleY = displayHeight / originalHeight;
+            
+            const leftPx = spot.left * scaleX;
+            const topPx = spot.top * scaleY;
+            const widthPx = spot.width * scaleX;
+            const heightPx = spot.height * scaleY;
+            
+            const div = document.createElement('div');
+            div.className = 'hotspot';
+            div.style.left = leftPx + 'px';
+            div.style.top = topPx + 'px';
+            div.style.width = widthPx + 'px';
+            div.style.height = heightPx + 'px';
+            div.dataset.name = spot.name;
+            div.dataset.msg = spot.msg;
+            div.dataset.istreasure = spot.isTreasure;
+            
+            div.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (foundAD && !spot.isTreasure) {
+                    showModal("🥛 你已经找到AD钙奶啦！点击「重新寻宝」再玩一次吧～");
+                    return;
+                }
+                if (spot.isTreasure) {
+                    if (!foundAD) {
+                        foundAD = true;
+                        updateUI();
+                        showModal(spot.msg);
+                        // 可选：给玩具箱热区加个金边
+                        div.style.boxShadow = '0 0 0 3px gold';
+                    } else {
+                        showModal("AD钙奶已经被你找到啦！重新开始才能再找一次。");
+                    }
+                } else {
+                    showModal(spot.msg);
+                }
+            });
+            hotspotLayer.appendChild(div);
+        });
+    }
+
+    // 重置游戏
+    function resetGame() {
+        foundAD = false;
+        updateUI();
+        generateHotspots(); // 重绘热区（清除金边）
+        showModal("🕰️ 时光倒流，房间恢复原样，继续寻找AD钙奶吧！");
+    }
+
+    // 图片加载完成后生成热区
+    img.onload = function() {
+        generateHotspots();
+    };
+    if (img.complete) {
+        generateHotspots();
+    }
+
+    document.getElementById('resetBtn').addEventListener('click', resetGame);
+    window.addEventListener('resize', function() {
+        generateHotspots();
+    });
+
+    updateUI();
+</script>
+</body>
+</html>
